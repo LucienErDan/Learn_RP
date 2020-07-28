@@ -2,9 +2,25 @@
 # versioning system
 ################################################################################
 
-VER := $(shell cat apps-tools/ecosystem/info/info.json | grep version | sed -e 's/.*:\ *\"//' | sed -e 's/-.*//')
+################################################################################
+# 知识点
+#	$@--目标文件，$^--所有的依赖文件，$<--第一个依赖文件。
+################################################################################
+
+
+#有时间学习下VER的筛选方式
+#以下是cat apps-tools/ecosystem/info/info.json的内容
+#{
+#    "name": "Ecosystem",
+#    "version": "0.99-BUILD_NUMBER",
+#    "revision": "REVISION",
+#    "description": "Red Pitaya GNU/Linux OS & Ecosystem."
+#}
+VER := $(shell cat apps-tools/ecosystem/info/info.json | grep version | sed -e 's/.*:\ *\"//' | sed -e 's/-.*//')	#结果：0.99
+
+#生成的ecosystem名字为：ecosystem-0.99-0-26f6e76.zip。
 BUILD_NUMBER ?= 0
-REVISION ?= $(shell git rev-parse --short HEAD)
+REVISION ?= $(shell git rev-parse --short HEAD)	#结果：26f6e76
 VERSION = $(VER)-$(BUILD_NUMBER)-$(REVISION)
 export BUILD_NUMBER
 export REVISION
@@ -115,7 +131,7 @@ endif
 fpga: $(INSTALL_DIR)/fpga
 
 $(INSTALL_DIR)/fpga: $(DTREE_DIR)
-	mkdir -p $(INSTALL_DIR)/fpga
+	mkdir -p $@
 	# compile FPGA projects
 	for ITM in $(FPGA_PRJ_LST); do \
 	    make -C fpga PRJ=$$ITM MODEL=$(FPGA_MODEL) HWID=$(HWID); \
@@ -226,12 +242,16 @@ DEVICETREE = $(TMP)/dts/devicetree.dtb
 
 devicetree: $(DEVICETREE)
 
+#	targets : normal-prerequisites | order-only-prerequisites
+#	| 它的功能是，只有第一次构造targets时才会使用order-only-prerequisite
 $(DTREE_TAR): | $(DL)
 	curl -L $(DTREE_URL) -o $@
 
+#写的跟文章一样
 $(DTREE_DIR): $(DTREE_TAR)
 	mkdir -p $@
 	tar -zxf $< --strip-components=1 --directory=$@
+
 
 $(DEVICETREE): $(DTREE_DIR) $(INSTALL_DIR)/fpga $(TMP)
 	cp -r $(INSTALL_DIR)/fpga/$(FPGA_PRJ)/dts $(TMP)
